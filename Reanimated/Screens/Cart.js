@@ -92,7 +92,7 @@ const Cart = () => {
               </View>
             </View>
             <ScrollView style={{ flex: 1 }}>
-              {reduxCart.map((ob) => {
+              {reduxCart.map((ob,index) => {
 
                 return <>
 
@@ -120,7 +120,7 @@ const Cart = () => {
                         <TouchableOpacity style={{ backgroundColor: "rgba(180,180,180,0.8)", padding: 5, borderRadius: 5 }} onPress={()=>dispatch(decreseQty(ob))}>
                           <MaterialCommunityIcons name="delete" size={25} color={"black"} />
                         </TouchableOpacity>
-                        <Text style={{ color: "black", fontSize: 20, fontWeight: "bold" }}>1</Text>
+                        <Text style={{ color: "black", fontSize: 20, fontWeight: "bold" }}>{ob.qty}</Text>
                         <TouchableOpacity style={{ backgroundColor: "black", padding: 4, borderRadius: 5 }}onPress={()=>dispatch(increseQty(ob))} >
                           <MaterialCommunityIcons name="plus" size={25} color={"white"} />
                         </TouchableOpacity>
@@ -130,7 +130,7 @@ const Cart = () => {
                           <Text style={{ fontSize: 16, color: "white" }}>Remove</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.cart_item_place_order}>
-                          <Text style={{ fontSize: 16, color: "black" }}>Place Order</Text>
+                          <Text style={{ fontSize: 16, color: "white" }}>Place Order</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   cart_item_place_order: {
     width: responsiveWidth(26), height: responsiveHeight(4),
-    backgroundColor: "rgba(0,0,256,0.4)",
+    backgroundColor: "rgba(0,0,256,0.7)",
     justifyContent: "center", alignItems: "center", borderRadius: 5
   }
 

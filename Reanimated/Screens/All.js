@@ -2,40 +2,56 @@ import { View, Text, ScrollView, TextInput, StyleSheet, TouchableOpacity, Image,
 import { responsiveHeight, responsiveWidth } from 'react-native-responsive-dimensions';
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { addProduct, addToCart } from '../Redux/Slice';
+import { addProduct, addToCart, removeBtnFromAllProduct } from '../Redux/Slice';
 
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
+const limit = 30;
+
 const All = () => {
     const dispatch = useDispatch();
     const navigation = useNavigation()
-    const reduxProduct = useSelector(state => state.products.value.products);
-    const reduxCart = useSelector(state => state.products.cart)
+    const reduxProduct = useSelector(state => state.products.value);
+    const reduxCart = useSelector(state => state.products.cart);
+    const [apiData, setApiData] = useState([]);
+    // console.log(reduxProduct)
 
-    // console.log(reduxCart)
+    const [skip, setSkip] = useState(0);
+    const [loadItem, setLoadItem] = useState(true); // Use state to track loading status
+    let query = `?skip=${skip}&limit=${limit}`;
 
-
-    const load = async () => {
-
-        try {
-            const response = await axios.get('https://dummyjson.com/products');
-            const data = response.data;
-
-            dispatch(addProduct(data))
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
+    const load = () => {
+        axios.get('https://dummyjson.com/products' + query)
+            .then(resp => {
+                const newProducts = resp.data.products;
+                // console.log(newProducts)
+                if (newProducts.length === 0) {
+                    setLoadItem(false); // No more items to load
+                }
+                // Combine new products with existing products in Redux
+                setApiData(newProducts)
+                dispatch(addProduct(newProducts))
+                setSkip(skip + limit);
+            })
+            .catch(error => {
+                console.error(error);
+                setLoadItem(false); // Handle the error and set loadItem to false if needed
+            });
     };
+
+    const onEndReached = () => {
+        if (loadItem) {
+            load();
+        }
+    }
 
     useEffect(() => {
         load();
     }, []);
 
-
     const NavigateToSingleProduct = (singleProduct) => {
-        // const singleProduct = oneItem
-        navigation.navigate("SingleProduct", { singleProduct })
+        navigation.navigate("SingleProduct", { singleProduct });
     }
 
     return (
@@ -47,43 +63,48 @@ const All = () => {
 
                 <FlatList
                     data={reduxProduct}
-                    numColumns={2} // Display items in 2 columns
-                    keyExtractor={(item) => item.id.toString()}
-                    contentContainerStyle={{ paddingBottom: 70 }} // Adjust this value as needed
-                    renderItem={({ item }) => (
-                        <View style={styles.all_prodItem}>
-                            <View>
-                                <Image source={{ uri: item.thumbnail }} style={styles.all_prodImg} />
+                    numColumns={2}
+                    keyExtractor={(item, index) => (item ? item.id.toString() : index.toString())} // Use index as the key if item.id is not available
+                    contentContainerStyle={{ paddingBottom: 70 }}
+                    onEndReached={onEndReached}
+                    renderItem={({ item }) => {
+
+                        let status = reduxCart.some((ob) => ob.id == item.id);
+
+                        return (
+                            <View style={styles.all_prodItem}>
+                                <View style={styles.imgView}>
+                                    <Image source={{ uri: item.thumbnail }} style={styles.all_prodImg} />
+                                </View>
+                                <View style={styles.all_prod_disc}>
+                                    <View style={styles.all_prod_disc_sec}>
+                                        <TouchableOpacity onPress={() => NavigateToSingleProduct(item)}>
+                                            <Text style={{ fontSize: 17, color: "black", fontWeight: "600" }}>{item.title}</Text>
+                                        </TouchableOpacity>
+                                        <Text style={{ color: "black" }}>Brand - {item.brand}</Text>
+                                    </View>
+                                    <View style={[styles.all_prod_disc_sec]}>
+                                        <Text style={{ fontSize: 20, color: "green", fontWeight: "600" }}>Price - {item.price}$</Text>
+                                    </View>
+                                    <View style={styles.all_prod_disc_sec_btn}>
+                                        {status ?
+                                            <TouchableOpacity style={[styles.all_prod_addBtn, { backgroundColor: "#dc3545" }]} onPress={() => dispatch(removeBtnFromAllProduct({ item }))}>
+                                                <Text style={{ color: "white" }}>Remove</Text>
+                                            </TouchableOpacity>
+                                            :
+                                            <TouchableOpacity style={[styles.all_prod_addBtn, { backgroundColor: "#ffc107" }]} onPress={() => dispatch(addToCart({ item }))}>
+                                                <Text style={{ color: "black" }}>Add to cart</Text>
+                                            </TouchableOpacity>
+                                        }
+                                        <TouchableOpacity style={styles.all_prod_buyBtn}>
+                                            <Text style={{ color: "#fff" }}>Buy</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
                             </View>
-                            <View style={styles.all_prod_disc}>
-                                <View style={styles.all_prod_disc_sec}>
-                                    <TouchableOpacity onPress={() => NavigateToSingleProduct(item)}>
-                                        <Text style={{ fontSize: 17, color: "black", fontWeight: "600" }} >{item.title}</Text>
-                                    </TouchableOpacity>
-                                    <Text style={{ color: "black" }}>Brand - {item.brand}</Text>
-                                    <Text style={{ color: "green" }}>Rating - {item.rating}</Text>
-                                </View>
-                                <View style={[styles.all_prod_disc_sec, { paddingTop: 10 }]}>
-                                    <Text style={{ fontSize: 17, color: "green", fontWeight: "600" }}>Price - {item.price}$</Text>
-                                    <Text style={{ color: "black" }}>Discount Percentage : {item.discountPercentage}%</Text>
-                                </View>
-                                <View style={styles.all_prod_disc_sec_btn}>
-                                    <TouchableOpacity style={styles.all_prod_addBtn} onPress={() => dispatch(addToCart({ item }))}>
-                                        <Text style={{ color: "black" }}>Add to cart</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.all_prod_buyBtn}>
-                                        <Text style={{ color: "black" }}>Buy</Text>
-                                    </TouchableOpacity>
-
-                                </View>
-                            </View>
-                        </View>
-
-                    )}
-
+                        )
+                    }}
                 />
-
-
             </View>
         </SafeAreaView>
     )
@@ -101,51 +122,46 @@ const styles = StyleSheet.create({
         borderRadius: 20
     },
     all_prodItem: {
-        height: responsiveHeight(25),
-        width: responsiveWidth(95),
+        flex: 1,
         backgroundColor: "white",
         margin: 10,
         padding: 10,
         borderRadius: 10,
-        // flexDirection: "row",
-
+    },
+    imgView: {
+        flex: 1
     },
     all_prodImg: {
-        width: responsiveWidth(30),
-        height: responsiveHeight(22),
-        borderRadius: 10
+        flex: 1,
+        borderRadius: 10,
+        height: responsiveHeight(25),
+        width: responsiveHeight(20)
     },
     all_prod_disc: {
-        width: responsiveWidth(55),
-        height: responsiveHeight(22),
-        // backgroundColor: "gray",
-        // borderWidth: 1,
-        // padding:10,
-        marginLeft: responsiveWidth(4),
-        // justifyContent:"center",
-        // alignItems:"center"
+        flex: 2,
     },
     all_prod_disc_sec: {
-        width: "100%", height: responsiveHeight(9), padding: 8
+        width: "100%", padding: 5
     },
     all_prod_disc_sec_btn: {
-        width: "100%", height: responsiveHeight(4), flexDirection: "row", alignItems: "flex-end"
+        width: "100%", height: responsiveHeight
     },
     all_prod_addBtn: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 5,
-        margin: 5, backgroundColor: "#ffc107", width: responsiveWidth(25), height: responsiveHeight(4)
+        margin: 5,
+        width: responsiveWidth(40),
+        paddingVertical: 9
     },
     all_prod_buyBtn: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 5,
-        margin: 5, backgroundColor: "#28a745", width: responsiveWidth(25), height: responsiveHeight(4)
+        margin: 5, backgroundColor: "#28a745", width: responsiveWidth(40), paddingVertical: 9
     }
-
 })
 
 export default All;

@@ -169,7 +169,9 @@ const Home = () => {
 
 const styles = StyleSheet.create({
   search: {
-    height: responsiveHeight(6), width: responsiveWidth(95), backgroundColor: "white", marginLeft: responsiveWidth(2), marginRight: responsiveWidth(2), marginTop: 20, borderRadius: 20
+    height: responsiveHeight(6), width: responsiveWidth(95), 
+    backgroundColor: "white", marginLeft: responsiveWidth(2), marginRight: responsiveWidth(2),
+     marginTop: 20, borderRadius: 20
 
   },
   welocome: {
